@@ -1,6 +1,6 @@
 package main
 
-import "github.com/yoneyan/vm_mgr/client/cmd"
+import "github.com/vmmgr/gclient/cmd"
 
 func main() {
 	cmd.Execute()

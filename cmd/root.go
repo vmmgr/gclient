@@ -17,7 +17,6 @@ type BaseData struct {
 	User  string
 	Pass  string
 	Token string
-	Group string
 }
 
 var rootCmd = &cobra.Command{
@@ -37,13 +36,11 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.controller.yaml)")
-	rootCmd.Flags().Bool("toggle", false, "Help message for toggle")
+	//rootCmd.Flags().Bool("toggle", false, "Help message for toggle")
 	rootCmd.PersistentFlags().StringP("host", "H", "127.0.0.1:50200", "host example: 127.0.0.1:50001")
 	rootCmd.PersistentFlags().StringP("token", "t", "", "")
 	rootCmd.PersistentFlags().StringP("authuser", "u", "", "username")
 	rootCmd.PersistentFlags().StringP("authpass", "p", "", "password")
-	rootCmd.PersistentFlags().StringP("group", "g", "", "group")
-	rootCmd.PersistentFlags().BoolP("direct", "D", false, "direct connection to node")
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -84,16 +81,11 @@ func Base(cmd *cobra.Command) BaseData {
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
 	}
-	group, err := cmd.Flags().GetString("group")
-	if err != nil {
-		log.Fatalf("could not greet: %v", err)
-	}
 
 	return BaseData{
 		Host:  host,
 		User:  authuser,
 		Pass:  authpass,
 		Token: token,
-		Group: group,
 	}
 }

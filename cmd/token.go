@@ -1,10 +1,9 @@
 package cmd
 
 import (
-	"errors"
-	"fmt"
 	"github.com/spf13/cobra"
-	"github.com/yoneyan/vm_mgr/client/data"
+	"github.com/vmmgr/gclient/data"
+	"log"
 )
 
 var tokenCmd = &cobra.Command{
@@ -14,59 +13,47 @@ var tokenCmd = &cobra.Command{
 `,
 }
 var tokenGenerateCmd = &cobra.Command{
-	Use:   "generate",
-	Short: "token generate",
+	Use: "generate",
+	Short: `token generate 
+0:Permanent 1:24H 2:1H`,
 	Long: `token generate tool
 for example:
-
-token generate -H 127.0.0.1:50200 -u test -p test`,
+0:Permanent 1:24H 2:1H
+token generate　[0/1/2]`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		d := Base(cmd)
-
-		data.GenerateToken(d.Host, d.User, d.Pass)
-
-		fmt.Println("Process End")
+		data.GenerateToken(cmd, args)
 		return nil
 	},
 }
 
-var tokenRemoveCmd = &cobra.Command{
-	Use:   "remove",
-	Short: "token remove",
-	Long: `token remove tool
+var tokenDeleteCmd = &cobra.Command{
+	Use:   "delete",
+	Short: "token delete",
+	Long: `token delete tool
 for example:
 
-token remove [token] -H 127.0.0.1:50200`,
+token delete [token]`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 || 2 < len(args) {
-			return errors.New("false")
+			log.Fatal("Syntax error!!")
 		}
-		d := Base(cmd)
-
-		data.DeleteToken(&data.AuthData{Name: d.User, Pass: d.Pass, Token: d.Token}, d.Host, args[0])
-
-		fmt.Println("Process End")
+		data.DeleteToken(cmd, args)
 		return nil
 	},
 }
 
 var tokenGetAllCmd = &cobra.Command{
 	Use:   "get",
-	Short: "token all get",
+	Short: "get tokens for all users",
 	Long: `token get tool
 for example:
 
-token get -H 127.0.0.1:50200 -u admin -p test`,
+token get`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) > 0 {
-
-			return errors.New("false")
+			log.Fatal("Syntax error!!")
 		}
-		d := Base(cmd)
-
-		data.GetAllToken(&data.AuthData{Name: d.User, Pass: d.Pass, Token: d.Token}, d.Host)
-
-		fmt.Println("Process End")
+		data.GetAllToken(cmd, args)
 		return nil
 	},
 }
@@ -75,6 +62,6 @@ func init() {
 
 	rootCmd.AddCommand(tokenCmd)
 	tokenCmd.AddCommand(tokenGenerateCmd)
-	tokenCmd.AddCommand(tokenRemoveCmd)
+	tokenCmd.AddCommand(tokenDeleteCmd)
 	tokenCmd.AddCommand(tokenGetAllCmd)
 }

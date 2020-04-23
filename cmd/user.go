@@ -1,13 +1,12 @@
 package cmd
 
 import (
-	"errors"
-	"fmt"
 	"github.com/spf13/cobra"
-	"github.com/yoneyan/vm_mgr/client/data"
+	"github.com/vmmgr/gclient/data"
+	"log"
 )
 
-var usercmd = &cobra.Command{
+var userCmd = &cobra.Command{
 	Use:   "user",
 	Short: "user",
 	Long: `user command. For example:
@@ -15,40 +14,33 @@ user add test
 user remove test`,
 }
 
-var useraddcmd = &cobra.Command{
+var userAddCmd = &cobra.Command{
 	Use:   "add",
 	Short: "user add",
 	Long: `user add tool
 for example:
-
-user add admin test -H 127.0.0.1:50200 -u admin -p `,
+user add [user] [pass]`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
-			return errors.New("false")
+			log.Fatal("Syntax error!!")
 		}
 
-		d := Base(cmd)
-
-		data.AddUser(&data.AuthData{Name: d.User, Pass: d.Pass, Token: d.Token}, d.Host, args[0], args[1])
-
-		fmt.Println("Process End")
+		data.AddUser(cmd, args)
 		return nil
 	},
 }
 
-var userremovecmd = &cobra.Command{
-	Use:   "remove",
-	Short: "user remove",
-	Long:  "user remove tool",
+var userDeleteCmd = &cobra.Command{
+	Use:   "delete",
+	Short: "user delete",
+	Long: `user add tool
+for example:
+user delete [UserID]`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		//if len(args) < 1 {
-		//	return errors.New("false")
-		//}
-		d := Base(cmd)
-
-		data.RemoveUser(&data.AuthData{Name: d.User, Pass: d.Pass, Token: d.Token}, d.Host, args[0])
-
-		fmt.Println("Process End")
+		if len(args) < 0 {
+			log.Fatal("Syntax error!!")
+		}
+		data.DeleteUser(cmd, args)
 		return nil
 	},
 }
@@ -64,69 +56,58 @@ var userGetAllCmd = &cobra.Command{
 	Short: "user get all",
 	Long: `get all user
 for example:
-user get all -u test -p test -H 127.0.0.1:50200`,
+user get all`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		d := Base(cmd)
-
-		data.GetAllUser(&data.AuthData{Name: d.User, Pass: d.Pass, Token: d.Token}, d.Host)
-
-		fmt.Println("Process End")
+		data.GetAllUser(cmd, args)
 		return nil
 	},
 }
 
-var userchangeCmd = &cobra.Command{
+var userChangeCmd = &cobra.Command{
 	Use:   "change",
 	Short: "change tool for user",
 	Long:  "change tool for user",
 }
 
-var userpasschangeCmd = &cobra.Command{
+var userPassChangeCmd = &cobra.Command{
 	Use:   "pass",
 	Short: "change pass",
 	Long: `change pass tool for user
 for example:
-user change pass [username] [newpass]`,
+user change pass [userID] [newpass]`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
-			return errors.New("false")
+			log.Fatal("Syntax error!!")
 		}
-		d := Base(cmd)
-
-		data.UserNameChange(&data.AuthData{Name: d.User, Pass: d.Pass, Token: d.Token}, d.Host, args[0], args[1])
-
-		fmt.Println("Process End")
+		data.UserNameChange(cmd, args)
 		return nil
 	},
 }
 
-var usernamechangeCmd = &cobra.Command{
+var userNameChangeCmd = &cobra.Command{
 	Use:   "name",
 	Short: "change name",
 	Long: `change name tool for user
 for example:
-user change pass [before username] [after username]`,
+user change name [UserID] [after username]`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
-			return errors.New("false")
+			log.Fatal("Syntax error!!")
 		}
-		d := Base(cmd)
 
-		data.UserPassChange(&data.AuthData{Name: d.User, Pass: d.Pass, Token: d.Token}, d.Host, args[0], args[1])
-
-		fmt.Println("Process End")
+		data.UserPassChange(cmd, args)
 		return nil
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(usercmd)
-	usercmd.AddCommand(useraddcmd)
-	usercmd.AddCommand(userremovecmd)
-	usercmd.AddCommand(userGetCmd)
-	usercmd.AddCommand(userchangeCmd)
+	rootCmd.AddCommand(userCmd)
+	userCmd.AddCommand(userAddCmd)
+	userCmd.AddCommand(userDeleteCmd)
+	userCmd.AddCommand(userGetCmd)
+	userCmd.AddCommand(userChangeCmd)
 
 	userGetCmd.AddCommand(userGetAllCmd)
-	userchangeCmd.AddCommand(usernamechangeCmd)
-	userchangeCmd.AddCommand(userpasschangeCmd)
+	userChangeCmd.AddCommand(userNameChangeCmd)
+	userChangeCmd.AddCommand(userPassChangeCmd)
 }

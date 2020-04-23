@@ -3,12 +3,14 @@ package data
 import (
 	"context"
 	"github.com/olekukonko/tablewriter"
-	pb "github.com/yoneyan/vm_mgr/proto/proto-go"
+	"github.com/spf13/cobra"
+	pb "github.com/vmmgr/controller/proto/proto-go"
+	"github.com/vmmgr/gclient/etc"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 	"io"
 	"log"
 	"os"
-	_ "os"
 	"strconv"
 	"time"
 )
@@ -19,18 +21,19 @@ type AuthData struct {
 	Token string
 }
 
-func AddUser(a *AuthData, address, user, pass string) {
-	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+func AddUser(c *cobra.Command, args []string) {
+	base := etc.GetData(c)
+	conn, err := grpc.Dial(base.Host, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithTimeout(time.Second))
 	if err != nil {
 		log.Fatalf("Not connect; %v", err)
 	}
 	defer conn.Close()
-	c := pb.NewGrpcClient(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
+	client := pb.NewControllerClient(conn)
+	header := metadata.New(map[string]string{"authorization": base.Token})
+	ctx := metadata.NewIncomingContext(context.Background(), header)
 
-	r, err := c.AddUser(ctx, &pb.UserData{Base: &pb.Base{User: a.Name, Pass: a.Pass, Token: a.Token}, User: user, Pass: pass})
+	r, err := client.AddUser(ctx, &pb.UserData{Name: args[0], Pass: args[1]})
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
 	}
@@ -41,18 +44,19 @@ func AddUser(a *AuthData, address, user, pass string) {
 	log.Println(r.Info)
 }
 
-func RemoveUser(a *AuthData, address, user string) {
-	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+func DeleteUser(c *cobra.Command, args []string) {
+	base := etc.GetData(c)
+	conn, err := grpc.Dial(base.Host, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithTimeout(time.Second))
 	if err != nil {
 		log.Fatalf("Not connect; %v", err)
 	}
 	defer conn.Close()
-	c := pb.NewGrpcClient(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
+	client := pb.NewControllerClient(conn)
+	header := metadata.New(map[string]string{"authorization": base.Token})
+	ctx := metadata.NewIncomingContext(context.Background(), header)
 
-	r, err := c.RemoveUser(ctx, &pb.UserData{Base: &pb.Base{User: a.Name, Pass: a.Pass, Token: a.Token}, User: user})
+	r, err := client.DeleteUser(ctx, &pb.UserData{Id: args[0]})
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
 	}
@@ -63,35 +67,36 @@ func RemoveUser(a *AuthData, address, user string) {
 	log.Println(r.Info)
 }
 
-func GetAllUser(a *AuthData, address string) {
-	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+func GetAllUser(c *cobra.Command, args []string) {
+	base := etc.GetData(c)
+	conn, err := grpc.Dial(base.Host, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithTimeout(time.Second))
 	if err != nil {
 		log.Fatalf("Not connect; %v", err)
 	}
 	defer conn.Close()
-	c := pb.NewGrpcClient(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
+	client := pb.NewControllerClient(conn)
+	header := metadata.New(map[string]string{"authorization": base.Token})
+	ctx := metadata.NewIncomingContext(context.Background(), header)
 
-	stream, err := c.GetUser(ctx, &pb.UserData{Base: &pb.Base{User: a.Name, Pass: a.Pass, Token: a.Token}, Mode: 0})
+	stream, err := client.GetAllUser(ctx, &pb.Null{})
 	if err != nil {
 		log.Fatal(err)
 	}
 	var data [][]string
 	for {
-		article, err := stream.Recv()
+		d, err := stream.Recv()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
 			log.Fatal(err)
 		}
-		tmp := []string{strconv.Itoa(int(article.Id)), article.User}
+		tmp := []string{d.Id, d.Name, strconv.Itoa(int(d.Auth)), d.Admingroup, d.Usergroup}
 		data = append(data, tmp)
 	}
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"UserID", "User"})
+	table.SetHeader([]string{"UserID", "User", "Auth", "AdminGroup", "UserGroup"})
 
 	for _, v := range data {
 		table.Append(v)
@@ -99,18 +104,19 @@ func GetAllUser(a *AuthData, address string) {
 	table.Render()
 }
 
-func UserNameChange(a *AuthData, address, user, pass string) {
-	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+func UserNameChange(c *cobra.Command, args []string) {
+	base := etc.GetData(c)
+	conn, err := grpc.Dial(base.Host, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithTimeout(time.Second))
 	if err != nil {
 		log.Fatalf("Not connect; %v", err)
 	}
 	defer conn.Close()
-	c := pb.NewGrpcClient(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
+	client := pb.NewControllerClient(conn)
+	header := metadata.New(map[string]string{"authorization": base.Token})
+	ctx := metadata.NewIncomingContext(context.Background(), header)
 
-	r, err := c.ChangeUserName(ctx, &pb.UserData{Base: &pb.Base{User: a.Name, Pass: a.Pass, Token: a.Token}, User: user, Pass: pass})
+	r, err := client.UpdateUser(ctx, &pb.UserData{Id: args[0], Name: args[1]})
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
 	}
@@ -121,18 +127,19 @@ func UserNameChange(a *AuthData, address, user, pass string) {
 	log.Println(r.Info)
 }
 
-func UserPassChange(a *AuthData, address, user, pass string) {
-	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+func UserPassChange(c *cobra.Command, args []string) {
+	base := etc.GetData(c)
+	conn, err := grpc.Dial(base.Host, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithTimeout(time.Second))
 	if err != nil {
 		log.Fatalf("Not connect; %v", err)
 	}
 	defer conn.Close()
-	c := pb.NewGrpcClient(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
+	client := pb.NewControllerClient(conn)
+	header := metadata.New(map[string]string{"authorization": base.Token})
+	ctx := metadata.NewIncomingContext(context.Background(), header)
 
-	r, err := c.ChangeUserPass(ctx, &pb.UserData{Base: &pb.Base{User: a.Name, Pass: a.Pass, Token: a.Token}, User: user, Pass: pass})
+	r, err := client.UpdateUser(ctx, &pb.UserData{Id: args[0], Pass: args[1]})
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
 	}

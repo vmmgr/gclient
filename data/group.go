@@ -2,10 +2,12 @@ package data
 
 import (
 	"context"
-	"fmt"
 	"github.com/olekukonko/tablewriter"
-	pb "github.com/yoneyan/vm_mgr/proto/proto-go"
+	"github.com/spf13/cobra"
+	pb "github.com/vmmgr/controller/proto/proto-go"
+	"github.com/vmmgr/gclient/etc"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 	"io"
 	"log"
 	"os"
@@ -13,35 +15,35 @@ import (
 	"time"
 )
 
-func AddGroup(a *AuthData, address, group, net, maxvm, maxcpu, maxmem, maxstorage string) {
-	vm, err := strconv.Atoi(maxvm)
-	if err != nil {
-		log.Fatal("MaxCPU Error")
-	}
-	cpu, err := strconv.Atoi(maxcpu)
-	if err != nil {
-		log.Fatal("MaxCPU Error")
-	}
-	mem, err := strconv.Atoi(maxmem)
-	if err != nil {
-		log.Fatal("MaxMem Error")
-	}
-	storage, err := strconv.Atoi(maxstorage)
-	if err != nil {
-		log.Fatal("MaxStorage Error")
-	}
+type MaxSpec struct {
+	MaxVM      int32
+	MaxCPU     int32
+	MaxMem     int32
+	MaxStorage int64
+}
 
-	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+func AddGroup(c *cobra.Command, args []string, spec MaxSpec) {
+	base := etc.GetData(c)
+	conn, err := grpc.Dial(base.Host, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithTimeout(time.Second))
 	if err != nil {
 		log.Fatalf("Not connect; %v", err)
 	}
 	defer conn.Close()
-	c := pb.NewGrpcClient(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
+	mode, err := strconv.Atoi(args[1])
+	if err != nil {
+		log.Fatal("Error: string to int")
+	}
 
-	r, err := c.AddGroup(ctx, &pb.GroupData{Base: &pb.Base{User: a.Name, Pass: a.Pass, Token: a.Token}, Name: group, Sepc: &pb.SpecData{Maxvm: int32(vm), Net: net, Maxcpu: int32(cpu), Maxmem: int32(mem), Maxstorage: int32(storage)}})
+	client := pb.NewControllerClient(conn)
+	header := metadata.New(map[string]string{"authorization": base.Token})
+	ctx := metadata.NewIncomingContext(context.Background(), header)
+
+	r, err := client.AddGroup(ctx, &pb.GroupData{
+		Name: args[0],
+		Mode: int32(mode),
+		Sepc: &pb.SpecData{Vm: spec.MaxVM, Cpu: spec.MaxCPU, Mem: spec.MaxMem, Storage: spec.MaxStorage},
+	})
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
 	}
@@ -52,18 +54,19 @@ func AddGroup(a *AuthData, address, group, net, maxvm, maxcpu, maxmem, maxstorag
 	log.Println(r.Info)
 }
 
-func RemoveGroup(a *AuthData, address, group string) {
-	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+func DeleteGroup(c *cobra.Command, args []string) {
+	base := etc.GetData(c)
+	conn, err := grpc.Dial(base.Host, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithTimeout(time.Second))
 	if err != nil {
 		log.Fatalf("Not connect; %v", err)
 	}
 	defer conn.Close()
-	c := pb.NewGrpcClient(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
+	client := pb.NewControllerClient(conn)
+	header := metadata.New(map[string]string{"authorization": base.Token})
+	ctx := metadata.NewIncomingContext(context.Background(), header)
 
-	r, err := c.RemoveGroup(ctx, &pb.GroupData{Base: &pb.Base{User: a.Name, Pass: a.Pass, Token: a.Token}, Name: group})
+	r, err := client.DeleteGroup(ctx, &pb.GroupData{Id: args[0]})
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
 	}
@@ -74,37 +77,37 @@ func RemoveGroup(a *AuthData, address, group string) {
 	log.Println(r.Info)
 }
 
-func GetAllGroup(a *AuthData, address string) {
-	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+func GetAllGroup(c *cobra.Command, args []string) {
+	base := etc.GetData(c)
+	conn, err := grpc.Dial(base.Host, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithTimeout(time.Second))
 	if err != nil {
 		log.Fatalf("Not connect; %v", err)
 	}
 	defer conn.Close()
-	c := pb.NewGrpcClient(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-	stream, err := c.GetGroup(ctx, &pb.GroupData{Base: &pb.Base{User: a.Name, Pass: a.Pass, Token: a.Token}, Mode: 0})
+	client := pb.NewControllerClient(conn)
+	header := metadata.New(map[string]string{"authorization": base.Token})
+	ctx := metadata.NewIncomingContext(context.Background(), header)
+
+	stream, err := client.GetAllGroup(ctx, &pb.Null{})
 	if err != nil {
 		log.Fatal(err)
 	}
 	var data [][]string
 	for {
-		article, err := stream.Recv()
+		d, err := stream.Recv()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
 			log.Fatal(err)
 		}
-		tmp := []string{strconv.Itoa(int(article.Id)), article.Name, article.Admin, article.User,
-			strconv.Itoa(int(article.Sepc.Maxcpu)), strconv.Itoa(int(article.Sepc.Maxmem)), strconv.Itoa(int(article.Sepc.Maxstorage)),
-			article.Sepc.Net}
+		tmp := []string{d.Id, d.Name, d.Admin, d.User, strconv.Itoa(int(d.Sepc.Vm)), strconv.Itoa(int(d.Sepc.Cpu)),
+			strconv.Itoa(int(d.Sepc.Mem)), strconv.Itoa(int(d.Sepc.Storage)), d.Sepc.Net}
 		data = append(data, tmp)
-
 	}
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"ID", "Name", "Admin", "User", "MaxCPU", "MaxMem", "MaxStorage", "Net"})
+	table.SetHeader([]string{"ID", "Name", "Admin", "User", "MaxVM", "MaxCPU", "MaxMem", "MaxStorage", "Net"})
 
 	for _, v := range data {
 		table.Append(v)
@@ -112,123 +115,151 @@ func GetAllGroup(a *AuthData, address string) {
 	table.Render()
 }
 
-func GetSelectGroup(a *AuthData, address, name string) {
-	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+func GetGroup(c *cobra.Command, args []string) {
+	base := etc.GetData(c)
+	conn, err := grpc.Dial(base.Host, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithTimeout(time.Second))
 	if err != nil {
 		log.Fatalf("Not connect; %v", err)
 	}
 	defer conn.Close()
-	c := pb.NewGrpcClient(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-	stream, err := c.GetGroup(ctx, &pb.GroupData{Base: &pb.Base{User: a.Name, Pass: a.Pass, Token: a.Token}, Name: name, Mode: 1})
+	client := pb.NewControllerClient(conn)
+	header := metadata.New(map[string]string{"authorization": base.Token})
+	ctx := metadata.NewIncomingContext(context.Background(), header)
+
+	stream, err := client.GetGroup(ctx, &pb.GroupData{Id: args[0]})
 	if err != nil {
 		log.Fatal(err)
 	}
+	var data [][]string
 	for {
-		article, err := stream.Recv()
+		d, err := stream.Recv()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("ID: " + strconv.Itoa(int(article.Id)) + " Name: " + article.Name + " Admin: " + article.Admin + " User: " + article.User)
-		fmt.Println(" MaxCPU: " + strconv.Itoa(int(article.Sepc.Maxcpu)) + " MaxMem: " + strconv.Itoa(int(article.Sepc.Maxmem)) + " MaxStorage: " + strconv.Itoa(int(article.Sepc.Maxstorage)))
+		tmp := []string{d.Id, d.Name, d.Admin, d.User, strconv.Itoa(int(d.Sepc.Vm)), strconv.Itoa(int(d.Sepc.Cpu)),
+			strconv.Itoa(int(d.Sepc.Mem)), strconv.Itoa(int(d.Sepc.Storage)), d.Sepc.Net}
+		data = append(data, tmp)
 	}
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"ID", "Name", "Admin", "User", "MaxVM", "MaxCPU", "MaxMem", "MaxStorage", "Net"})
+
+	for _, v := range data {
+		table.Append(v)
+	}
+	table.Render()
 }
 
-func GetMyGroup(a *AuthData, address string) {
-	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+func JoinAddGroup(c *cobra.Command, args []string) {
+	base := etc.GetData(c)
+	d := pb.GroupData{Id: args[1], Mode: 0}
+	conn, err := grpc.Dial(base.Host, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithTimeout(time.Second))
 	if err != nil {
 		log.Fatalf("Not connect; %v", err)
 	}
 	defer conn.Close()
-	c := pb.NewGrpcClient(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-	stream, err := c.GetGroup(ctx, &pb.GroupData{Base: &pb.Base{User: a.Name, Pass: a.Pass, Token: a.Token}, Mode: 2})
+	client := pb.NewControllerClient(conn)
+	header := metadata.New(map[string]string{"authorization": base.Token})
+	ctx := metadata.NewIncomingContext(context.Background(), header)
+
+	if args[0] == "0" {
+		//Admin
+		d.Admin = args[2]
+	} else if args[0] == "1" {
+		//User
+		d.User = args[2]
+	}
+	r, err := client.JoinGroup(ctx, &d)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("could not greet: %v", err)
 	}
-	for {
-		article, err := stream.Recv()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Printf("ID: " + strconv.Itoa(int(article.Id)) + " Name: " + article.Name + " Admin: " + article.Admin + " User: " + article.User)
-		fmt.Println(" MaxCPU: " + strconv.Itoa(int(article.Sepc.Maxcpu)) + " MaxMem: " + strconv.Itoa(int(article.Sepc.Maxmem)) + " MaxStorage: " + strconv.Itoa(int(article.Sepc.Maxstorage)))
-	}
+	log.Printf("Status: ")
+	log.Println(r.Status)
+
+	log.Printf("Info: ")
+	log.Println(r.Info)
 }
 
-func JoinAddGroup(a *AuthData, address, genre, group, user string) {
-	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+func JoinDeleteGroup(c *cobra.Command, args []string) {
+	base := etc.GetData(c)
+	d := pb.GroupData{Id: args[1], Mode: 1}
+	conn, err := grpc.Dial(base.Host, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithTimeout(time.Second))
 	if err != nil {
 		log.Fatalf("Not connect; %v", err)
 	}
 	defer conn.Close()
-	c := pb.NewGrpcClient(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-	if genre == "Admin" || genre == "admin" {
-		r, err := c.UserAddGroup(ctx, &pb.GroupData{Base: &pb.Base{User: a.Name, Pass: a.Pass, Token: a.Token}, Name: group, User: user, Mode: 0})
-		if err != nil {
-			log.Fatalf("could not greet: %v", err)
-		}
-		log.Printf("Status: ")
-		log.Println(r.Status)
+	client := pb.NewControllerClient(conn)
+	header := metadata.New(map[string]string{"authorization": base.Token})
+	ctx := metadata.NewIncomingContext(context.Background(), header)
 
-		log.Printf("Info: ")
-		log.Println(r.Info)
-	} else if genre == "User" || genre == "user" {
-		r, err := c.UserAddGroup(ctx, &pb.GroupData{Base: &pb.Base{User: a.Name, Pass: a.Pass, Token: a.Token}, Name: group, User: user, Mode: 1})
-		if err != nil {
-			log.Fatalf("could not greet: %v", err)
-		}
-		log.Printf("Status: ")
-		log.Println(r.Status)
-
-		log.Printf("Info: ")
-		log.Println(r.Info)
+	if args[0] == "0" {
+		//Admin
+		d.Admin = args[2]
+	} else if args[0] == "1" {
+		//User
+		d.User = args[2]
 	}
+	r, err := client.JoinGroup(ctx, &d)
+	if err != nil {
+		log.Fatalf("could not greet: %v", err)
+	}
+	log.Printf("Status: ")
+	log.Println(r.Status)
+
+	log.Printf("Info: ")
+	log.Println(r.Info)
 }
 
-func JoinRemoveGroup(a *AuthData, address, genre, group, user string) {
-	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+func GroupNameChange(c *cobra.Command, args []string) {
+	base := etc.GetData(c)
+	conn, err := grpc.Dial(base.Host, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithTimeout(time.Second))
 	if err != nil {
 		log.Fatalf("Not connect; %v", err)
 	}
 	defer conn.Close()
-	c := pb.NewGrpcClient(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
+	client := pb.NewControllerClient(conn)
+	header := metadata.New(map[string]string{"authorization": base.Token})
+	ctx := metadata.NewIncomingContext(context.Background(), header)
 
-	if genre == "Admin" || genre == "admin" {
-		r, err := c.UserRemoveGroup(ctx, &pb.GroupData{Base: &pb.Base{User: a.Name, Pass: a.Pass, Token: a.Token}, Name: group, Admin: user, Mode: 0})
-		if err != nil {
-			log.Fatalf("could not greet: %v", err)
-		}
-		log.Printf("Status: ")
-		log.Println(r.Status)
-
-		log.Printf("Info: ")
-		log.Println(r.Info)
-	} else if genre == "User" || genre == "user" {
-		r, err := c.UserRemoveGroup(ctx, &pb.GroupData{Base: &pb.Base{User: a.Name, Pass: a.Pass, Token: a.Token}, Name: group, User: user, Mode: 1})
-		if err != nil {
-			log.Fatalf("could not greet: %v", err)
-		}
-		log.Printf("Status: ")
-		log.Println(r.Status)
-
-		log.Printf("Info: ")
-		log.Println(r.Info)
+	r, err := client.UpdateGroup(ctx, &pb.GroupData{Id: args[0], Name: args[1]})
+	if err != nil {
+		log.Fatalf("could not greet: %v", err)
 	}
+	log.Printf("Status: ")
+	log.Println(r.Status)
+
+	log.Printf("Info: ")
+	log.Println(r.Info)
+}
+
+func GroupSpecChange(c *cobra.Command, args []string, spec MaxSpec) {
+	base := etc.GetData(c)
+	conn, err := grpc.Dial(base.Host, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithTimeout(time.Second))
+	if err != nil {
+		log.Fatalf("Not connect; %v", err)
+	}
+	defer conn.Close()
+
+	client := pb.NewControllerClient(conn)
+	header := metadata.New(map[string]string{"authorization": base.Token})
+	ctx := metadata.NewIncomingContext(context.Background(), header)
+
+	r, err := client.UpdateGroup(ctx, &pb.GroupData{
+		Id:   args[0],
+		Sepc: &pb.SpecData{Vm: spec.MaxVM, Cpu: spec.MaxCPU, Mem: spec.MaxMem, Storage: spec.MaxStorage},
+	})
+	if err != nil {
+		log.Fatalf("could not greet: %v", err)
+	}
+	log.Printf("Status: ")
+	log.Println(r.Status)
+
+	log.Printf("Info: ")
+	log.Println(r.Info)
 }

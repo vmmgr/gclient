@@ -1,10 +1,9 @@
 package cmd
 
 import (
-	"errors"
-	"fmt"
 	"github.com/spf13/cobra"
-	"github.com/yoneyan/vm_mgr/client/data"
+	"github.com/vmmgr/gclient/data"
+	"log"
 )
 
 // groupCmd represents the group command
@@ -13,170 +12,204 @@ var groupCmd = &cobra.Command{
 	Short: "group command",
 	Long: `group command
 For example:
-
-`,
+group add ..
+group delete ..
+group get ..
+group setting ..
+group join ..`,
 }
 
-var groupaddCmd = &cobra.Command{
+var groupAddCmd = &cobra.Command{
 	Use:   "add",
 	Short: "group add",
 	Long: `group add tool
 for example:
-
-group add otaku -H 127.0.0.1:50200 -u admin -p
-group add [GroupName] [Network] [MaxVM] [MaxCPU] [MaxMem] [MaxStorage]`,
+Mode: mode0 <- Administrator | mode1 <- User | mode2 <- Team
+group add [GroupName] [Mode] -v [MaxVM] -c [MaxCPU] -m [MaxMem] -s [MaxStorage]`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
-			return errors.New("false")
+			log.Fatal("Syntax error!!")
 		}
-
-		d := Base(cmd)
-
-		data.AddGroup(&data.AuthData{Name: d.User, Pass: d.Pass, Token: d.Token}, d.Host, args[0], args[1], args[2], args[3], args[4], args[5])
-
-		fmt.Println("Process End")
+		data.AddGroup(cmd, args, Spec(cmd))
 		return nil
 	},
 }
 
-var groupremoveCmd = &cobra.Command{
-	Use:   "remove",
-	Short: "group remove",
-	Long: `group remove tool
+var groupDeleteCmd = &cobra.Command{
+	Use:   "delete",
+	Short: "group delete",
+	Long: `group delete tool
 for example:
 
-group remove otaku -H 127.0.0.1:50200 -u test -p test
-group remove [GroupName]`,
+group delete [GroupID]`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
-			return errors.New("false")
+			log.Fatal("Syntax error!!")
 		}
-
-		d := Base(cmd)
-
-		data.RemoveGroup(&data.AuthData{Name: d.User, Pass: d.Pass, Token: d.Token}, d.Host, args[0])
-
-		fmt.Println("Process End")
+		data.DeleteGroup(cmd, args)
 		return nil
 	},
 }
 
-var groupgetCmd = &cobra.Command{
+var groupGetCmd = &cobra.Command{
 	Use:   "get",
 	Short: "group remove",
 	Long: `group remove tool
 for example:`,
 }
 
-var groupgetallCmd = &cobra.Command{
+var groupGetAllCmd = &cobra.Command{
 	Use:   "all",
 	Short: "group get all",
 	Long: `group get tool
 for example:
 
-group get all -H 127.0.0.1:50200 -u test -p test`,
+group get all`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		d := Base(cmd)
-
-		data.GetAllGroup(&data.AuthData{Name: d.User, Pass: d.Pass, Token: d.Token}, d.Host)
-
-		fmt.Println("Process End")
+		data.GetAllGroup(cmd, args)
 		return nil
 	},
 }
 
-var groupgeteachCmd = &cobra.Command{
-	Use:   "select",
-	Short: "group get each group",
+var groupGetMyselfCmd = &cobra.Command{
+	Use:   "myself",
+	Short: "display for group belong to myself",
 	Long: `group get tool
 for example:
-`,
+group get myself`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
-			return errors.New("false")
+			log.Fatal("Syntax error!!")
 		}
-		d := Base(cmd)
-
-		data.GetSelectGroup(&data.AuthData{Name: d.User, Pass: d.Pass, Token: d.Token}, d.Host, args[0])
-
-		fmt.Println("Process End")
+		data.GetGroup(cmd, args)
 		return nil
 	},
 }
 
-var groupgetmyCmd = &cobra.Command{
-	Use:   "my",
-	Short: "group get my group",
-	Long: `group get tool
-for example:
-`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if len(args) < 1 {
-			return errors.New("false")
-		}
-		d := Base(cmd)
-
-		data.GetMyGroup(&data.AuthData{Name: d.User, Pass: d.Pass, Token: d.Token}, d.Host)
-
-		fmt.Println("Process End")
-		return nil
-	},
-}
-
-var groupjoinCmd = &cobra.Command{
+var groupJoinCmd = &cobra.Command{
 	Use:   "join",
 	Short: "group join",
 	Long: `group join tool
-for example:`,
+for example:
+group join add ..
+group join delete ..`,
 }
 
-var groupjoinAddCmd = &cobra.Command{
+var groupJoinAddCmd = &cobra.Command{
 	Use:   "add",
 	Short: "group join add",
 	Long: `group join add tool
 for example:
-group join add [Admin/User] [GroupName] [User]`,
+Mode mode0:Admin | mode1: User
+group join add [Mode] [GroupID] [UserID]`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if len(args) < 1 {
-			return errors.New("false")
+		if len(args) < 2 {
+			log.Fatal("Syntax error!!")
 		}
-		d := Base(cmd)
-
-		data.JoinAddGroup(&data.AuthData{Name: d.User, Pass: d.Pass, Token: d.Token}, d.Host, args[0], args[1], args[2])
-
-		fmt.Println("Process End")
+		data.JoinAddGroup(cmd, args)
 		return nil
 	},
 }
 
-var groupjoinRemoveCmd = &cobra.Command{
-	Use:   "remove",
-	Short: "group join remove",
-	Long: `group join remove tool
+var groupJoinDeleteCmd = &cobra.Command{
+	Use:   "delete",
+	Short: "group join delete",
+	Long: `group join delete tool
 for example:
-group join remove [Admin/User] [GroupName] [User]`,
+Mode mode0:Admin | mode1: User
+group join delete [Mode] [GroupID] [UserID]`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if len(args) < 1 {
-			return errors.New("false")
+		if len(args) < 2 {
+			log.Fatal("Syntax error!!")
 		}
-		d := Base(cmd)
-
-		data.JoinRemoveGroup(&data.AuthData{Name: d.User, Pass: d.Pass, Token: d.Token}, d.Host, args[0], args[1], args[2])
-
-		fmt.Println("Process End")
+		data.JoinDeleteGroup(cmd, args)
 		return nil
 	},
+}
+
+var groupChangeCmd = &cobra.Command{
+	Use:   "change",
+	Short: "change tool for group",
+	Long: `change tool for group
+for example:
+group change name ..
+group change spec ..`,
+}
+
+var groupNameChangeCmd = &cobra.Command{
+	Use:   "name",
+	Short: "change name",
+	Long: `change name tool for group
+for example:
+group change name [GroupID] [new groupname]`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if len(args) < 1 {
+			log.Fatal("Syntax error!!")
+		}
+
+		data.GroupNameChange(cmd, args)
+		return nil
+	},
+}
+
+var groupSpecChangeCmd = &cobra.Command{
+	Use:   "spec",
+	Short: "change spec",
+	Long: `change spec tool for group
+for example:
+user change spec [GroupID] -v [MaxVM] -c [MaxCPU] -m [MaxMem] -s [MaxStorage]`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if len(args) < 0 {
+			log.Fatal("Syntax error!!")
+		}
+		data.GroupSpecChange(cmd, args, Spec(cmd))
+		return nil
+	},
+}
+
+func Spec(cmd *cobra.Command) data.MaxSpec {
+	vm, err := cmd.PersistentFlags().GetInt32("maxvm")
+	if err != nil {
+		log.Fatalf("could not greet: %v", err)
+	}
+	cpu, err := cmd.PersistentFlags().GetInt32("maxcpu")
+	if err != nil {
+		log.Fatalf("could not greet: %v", err)
+	}
+	mem, err := cmd.PersistentFlags().GetInt32("maxmem")
+	if err != nil {
+		log.Fatalf("could not greet: %v", err)
+	}
+	storage, err := cmd.PersistentFlags().GetInt64("maxstorage")
+	if err != nil {
+		log.Fatalf("could not greet: %v", err)
+	}
+
+	return data.MaxSpec{
+		MaxVM:      vm,
+		MaxCPU:     cpu,
+		MaxMem:     mem,
+		MaxStorage: storage,
+	}
 }
 
 func init() {
 	rootCmd.AddCommand(groupCmd)
-	groupCmd.AddCommand(groupaddCmd)
-	groupCmd.AddCommand(groupremoveCmd)
-	groupCmd.AddCommand(groupgetCmd)
-	groupgetCmd.AddCommand(groupgetallCmd)
-	groupgetCmd.AddCommand(groupgeteachCmd)
-	groupgetCmd.AddCommand(groupgetmyCmd)
-	groupCmd.AddCommand(groupjoinCmd)
-	groupjoinCmd.AddCommand(groupjoinAddCmd)
-	groupjoinCmd.AddCommand(groupjoinRemoveCmd)
+	groupCmd.AddCommand(groupAddCmd)
+	groupCmd.AddCommand(groupDeleteCmd)
+	groupCmd.AddCommand(groupGetCmd)
+	groupGetCmd.AddCommand(groupGetAllCmd)
+	groupGetCmd.AddCommand(groupGetMyselfCmd)
+	groupCmd.AddCommand(groupJoinCmd)
+	groupJoinCmd.AddCommand(groupJoinAddCmd)
+	groupJoinCmd.AddCommand(groupJoinDeleteCmd)
+	groupCmd.AddCommand(groupChangeCmd)
+	groupChangeCmd.AddCommand(groupNameChangeCmd)
+	groupChangeCmd.AddCommand(groupSpecChangeCmd)
+
+	groupCmd.PersistentFlags().Int32P("maxvm", "v", 1, "max vm")
+	groupCmd.PersistentFlags().Int32P("maxcpu", "c", 1, "max cpu")
+	groupCmd.PersistentFlags().Int32P("maxmem", "m", 1024, "max memory")
+	groupCmd.PersistentFlags().StringP("maxstorage", "s", "", "max storage capacity")
+	groupCmd.PersistentFlags().StringP("net", "n", "", "net")
 }
