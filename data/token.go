@@ -25,7 +25,7 @@ func GenerateToken(c *cobra.Command, args []string) {
 
 	client := pb.NewControllerClient(conn)
 	header := metadata.New(map[string]string{"authorization": base.Token})
-	ctx := metadata.NewIncomingContext(context.Background(), header)
+	ctx := metadata.NewOutgoingContext(context.Background(), header)
 
 	mode, err := strconv.Atoi(args[0])
 	if err != nil {
@@ -58,7 +58,7 @@ func DeleteToken(c *cobra.Command, args []string) {
 
 	client := pb.NewControllerClient(conn)
 	header := metadata.New(map[string]string{"authorization": base.Token})
-	ctx := metadata.NewIncomingContext(context.Background(), header)
+	ctx := metadata.NewOutgoingContext(context.Background(), header)
 
 	r, err := client.DeleteToken(ctx, &pb.Null{})
 	if err != nil {
@@ -81,7 +81,7 @@ func GetAllToken(c *cobra.Command, args []string) {
 
 	client := pb.NewControllerClient(conn)
 	header := metadata.New(map[string]string{"authorization": base.Token})
-	ctx := metadata.NewIncomingContext(context.Background(), header)
+	ctx := metadata.NewOutgoingContext(context.Background(), header)
 
 	stream, err := client.GetAllToken(ctx, &pb.Null{})
 	if err != nil {

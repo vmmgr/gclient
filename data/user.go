@@ -31,7 +31,7 @@ func AddUser(c *cobra.Command, args []string) {
 
 	client := pb.NewControllerClient(conn)
 	header := metadata.New(map[string]string{"authorization": base.Token})
-	ctx := metadata.NewIncomingContext(context.Background(), header)
+	ctx := metadata.NewOutgoingContext(context.Background(), header)
 
 	r, err := client.AddUser(ctx, &pb.UserData{Name: args[0], Pass: args[1]})
 	if err != nil {
@@ -54,7 +54,7 @@ func DeleteUser(c *cobra.Command, args []string) {
 
 	client := pb.NewControllerClient(conn)
 	header := metadata.New(map[string]string{"authorization": base.Token})
-	ctx := metadata.NewIncomingContext(context.Background(), header)
+	ctx := metadata.NewOutgoingContext(context.Background(), header)
 
 	r, err := client.DeleteUser(ctx, &pb.UserData{Id: args[0]})
 	if err != nil {
@@ -77,7 +77,7 @@ func GetAllUser(c *cobra.Command, args []string) {
 
 	client := pb.NewControllerClient(conn)
 	header := metadata.New(map[string]string{"authorization": base.Token})
-	ctx := metadata.NewIncomingContext(context.Background(), header)
+	ctx := metadata.NewOutgoingContext(context.Background(), header)
 
 	stream, err := client.GetAllUser(ctx, &pb.Null{})
 	if err != nil {
@@ -114,7 +114,7 @@ func UserNameChange(c *cobra.Command, args []string) {
 
 	client := pb.NewControllerClient(conn)
 	header := metadata.New(map[string]string{"authorization": base.Token})
-	ctx := metadata.NewIncomingContext(context.Background(), header)
+	ctx := metadata.NewOutgoingContext(context.Background(), header)
 
 	r, err := client.UpdateUser(ctx, &pb.UserData{Id: args[0], Name: args[1]})
 	if err != nil {
@@ -137,7 +137,7 @@ func UserPassChange(c *cobra.Command, args []string) {
 
 	client := pb.NewControllerClient(conn)
 	header := metadata.New(map[string]string{"authorization": base.Token})
-	ctx := metadata.NewIncomingContext(context.Background(), header)
+	ctx := metadata.NewOutgoingContext(context.Background(), header)
 
 	r, err := client.UpdateUser(ctx, &pb.UserData{Id: args[0], Pass: args[1]})
 	if err != nil {

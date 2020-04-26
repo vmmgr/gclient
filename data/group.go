@@ -37,7 +37,7 @@ func AddGroup(c *cobra.Command, args []string, spec MaxSpec) {
 
 	client := pb.NewControllerClient(conn)
 	header := metadata.New(map[string]string{"authorization": base.Token})
-	ctx := metadata.NewIncomingContext(context.Background(), header)
+	ctx := metadata.NewOutgoingContext(context.Background(), header)
 
 	r, err := client.AddGroup(ctx, &pb.GroupData{
 		Name: args[0],
@@ -64,7 +64,7 @@ func DeleteGroup(c *cobra.Command, args []string) {
 
 	client := pb.NewControllerClient(conn)
 	header := metadata.New(map[string]string{"authorization": base.Token})
-	ctx := metadata.NewIncomingContext(context.Background(), header)
+	ctx := metadata.NewOutgoingContext(context.Background(), header)
 
 	r, err := client.DeleteGroup(ctx, &pb.GroupData{Id: args[0]})
 	if err != nil {
@@ -87,7 +87,7 @@ func GetAllGroup(c *cobra.Command, args []string) {
 
 	client := pb.NewControllerClient(conn)
 	header := metadata.New(map[string]string{"authorization": base.Token})
-	ctx := metadata.NewIncomingContext(context.Background(), header)
+	ctx := metadata.NewOutgoingContext(context.Background(), header)
 
 	stream, err := client.GetAllGroup(ctx, &pb.Null{})
 	if err != nil {
@@ -125,7 +125,7 @@ func GetGroup(c *cobra.Command, args []string) {
 
 	client := pb.NewControllerClient(conn)
 	header := metadata.New(map[string]string{"authorization": base.Token})
-	ctx := metadata.NewIncomingContext(context.Background(), header)
+	ctx := metadata.NewOutgoingContext(context.Background(), header)
 
 	stream, err := client.GetGroup(ctx, &pb.GroupData{Id: args[0]})
 	if err != nil {
@@ -164,7 +164,7 @@ func JoinAddGroup(c *cobra.Command, args []string) {
 
 	client := pb.NewControllerClient(conn)
 	header := metadata.New(map[string]string{"authorization": base.Token})
-	ctx := metadata.NewIncomingContext(context.Background(), header)
+	ctx := metadata.NewOutgoingContext(context.Background(), header)
 
 	if args[0] == "0" {
 		//Admin
@@ -195,7 +195,7 @@ func JoinDeleteGroup(c *cobra.Command, args []string) {
 
 	client := pb.NewControllerClient(conn)
 	header := metadata.New(map[string]string{"authorization": base.Token})
-	ctx := metadata.NewIncomingContext(context.Background(), header)
+	ctx := metadata.NewOutgoingContext(context.Background(), header)
 
 	if args[0] == "0" {
 		//Admin
@@ -225,7 +225,7 @@ func GroupNameChange(c *cobra.Command, args []string) {
 
 	client := pb.NewControllerClient(conn)
 	header := metadata.New(map[string]string{"authorization": base.Token})
-	ctx := metadata.NewIncomingContext(context.Background(), header)
+	ctx := metadata.NewOutgoingContext(context.Background(), header)
 
 	r, err := client.UpdateGroup(ctx, &pb.GroupData{Id: args[0], Name: args[1]})
 	if err != nil {
@@ -248,7 +248,7 @@ func GroupSpecChange(c *cobra.Command, args []string, spec MaxSpec) {
 
 	client := pb.NewControllerClient(conn)
 	header := metadata.New(map[string]string{"authorization": base.Token})
-	ctx := metadata.NewIncomingContext(context.Background(), header)
+	ctx := metadata.NewOutgoingContext(context.Background(), header)
 
 	r, err := client.UpdateGroup(ctx, &pb.GroupData{
 		Id:   args[0],
