@@ -69,21 +69,6 @@ var userChangeCmd = &cobra.Command{
 	Long:  "change tool for user",
 }
 
-var userPassChangeCmd = &cobra.Command{
-	Use:   "pass",
-	Short: "change pass",
-	Long: `change pass tool for user
-for example:
-user change pass [userID] [newpass]`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if len(args) < 1 {
-			log.Fatal("Syntax error!!")
-		}
-		data.UserNameChange(cmd, args)
-		return nil
-	},
-}
-
 var userNameChangeCmd = &cobra.Command{
 	Use:   "name",
 	Short: "change name",
@@ -95,6 +80,21 @@ user change name [UserID] [after username]`,
 			log.Fatal("Syntax error!!")
 		}
 
+		data.UserNameChange(cmd, args)
+		return nil
+	},
+}
+
+var userPassChangeCmd = &cobra.Command{
+	Use:   "pass",
+	Short: "change pass",
+	Long: `change pass tool for user
+for example:
+user change pass [userID] [newpass]`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if len(args) < 1 {
+			log.Fatal("Syntax error!!")
+		}
 		data.UserPassChange(cmd, args)
 		return nil
 	},
