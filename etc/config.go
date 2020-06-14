@@ -31,7 +31,7 @@ type AuthenticationData struct {
 	Token string `json:"pass"`
 }
 type HostData struct {
-	Host string `json:"host"`
+	IP string `json:"host"`
 }
 
 func GetData(command *cobra.Command) Data {
@@ -42,33 +42,20 @@ func GetData(command *cobra.Command) Data {
 	}
 	var config Config
 	json.Unmarshal(file, &config)
-	host := config.Host.Host
-	user := config.Authentication.User
-	pass := base.Pass
+	host := config.Host.IP
 	token := config.Authentication.Token
 	if base.Host != "" {
 		host = base.Host
-	}
-	if base.User != "" {
-		user = base.User
 	}
 	if base.Token != "" {
 		token = base.Token
 	}
 
-	return Data{User: user, Pass: pass, Token: token, Host: host}
+	return Data{Token: token, Host: host}
 }
 
 func Base(cmd *cobra.Command) BaseData {
 	host, err := cmd.Flags().GetString("host")
-	if err != nil {
-		log.Fatalf("could not greet: %v", err)
-	}
-	authuser, err := cmd.Flags().GetString("authuser")
-	if err != nil {
-		log.Fatalf("could not greet: %v", err)
-	}
-	authpass, err := cmd.Flags().GetString("authpass")
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
 	}
@@ -79,8 +66,6 @@ func Base(cmd *cobra.Command) BaseData {
 
 	return BaseData{
 		Host:  host,
-		User:  authuser,
-		Pass:  authpass,
 		Token: token,
 	}
 }

@@ -66,7 +66,9 @@ func DeleteGroup(c *cobra.Command, args []string) {
 	header := metadata.New(map[string]string{"authorization": base.Token})
 	ctx := metadata.NewOutgoingContext(context.Background(), header)
 
-	r, err := client.DeleteGroup(ctx, &pb.GroupData{Id: args[0]})
+	groupID, _ := strconv.Atoi(args[0])
+
+	r, err := client.DeleteGroup(ctx, &pb.GroupData{Id: int64(groupID)})
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
 	}
@@ -102,7 +104,7 @@ func GetAllGroup(c *cobra.Command, args []string) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		tmp := []string{d.Id, d.Name, d.Admin, d.User, strconv.Itoa(int(d.Sepc.Vm)), strconv.Itoa(int(d.Sepc.Cpu)),
+		tmp := []string{strconv.Itoa(int(d.Id)), d.Name, d.Admin, d.User, strconv.Itoa(int(d.Sepc.Vm)), strconv.Itoa(int(d.Sepc.Cpu)),
 			strconv.Itoa(int(d.Sepc.Mem)), strconv.Itoa(int(d.Sepc.Storage)), d.Sepc.Net}
 		data = append(data, tmp)
 	}
@@ -127,7 +129,9 @@ func GetGroup(c *cobra.Command, args []string) {
 	header := metadata.New(map[string]string{"authorization": base.Token})
 	ctx := metadata.NewOutgoingContext(context.Background(), header)
 
-	stream, err := client.GetGroup(ctx, &pb.GroupData{Id: args[0]})
+	groupID, _ := strconv.Atoi(args[0])
+
+	stream, err := client.GetGroup(ctx, &pb.GroupData{Id: int64(groupID)})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -140,7 +144,7 @@ func GetGroup(c *cobra.Command, args []string) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		tmp := []string{d.Id, d.Name, d.Admin, d.User, strconv.Itoa(int(d.Sepc.Vm)), strconv.Itoa(int(d.Sepc.Cpu)),
+		tmp := []string{strconv.Itoa(int(d.Id)), d.Name, d.Admin, d.User, strconv.Itoa(int(d.Sepc.Vm)), strconv.Itoa(int(d.Sepc.Cpu)),
 			strconv.Itoa(int(d.Sepc.Mem)), strconv.Itoa(int(d.Sepc.Storage)), d.Sepc.Net}
 		data = append(data, tmp)
 	}
@@ -155,7 +159,9 @@ func GetGroup(c *cobra.Command, args []string) {
 
 func JoinAddGroup(c *cobra.Command, args []string) {
 	base := etc.GetData(c)
-	d := pb.GroupData{Id: args[1], Mode: 0}
+	groupID, _ := strconv.Atoi(args[1])
+
+	d := pb.GroupData{Id: int64(groupID), Mode: 0}
 	conn, err := grpc.Dial(base.Host, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithTimeout(time.Second))
 	if err != nil {
 		log.Fatalf("Not connect; %v", err)
@@ -186,7 +192,9 @@ func JoinAddGroup(c *cobra.Command, args []string) {
 
 func JoinDeleteGroup(c *cobra.Command, args []string) {
 	base := etc.GetData(c)
-	d := pb.GroupData{Id: args[1], Mode: 1}
+	groupID, _ := strconv.Atoi(args[1])
+
+	d := pb.GroupData{Id: int64(groupID), Mode: 1}
 	conn, err := grpc.Dial(base.Host, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithTimeout(time.Second))
 	if err != nil {
 		log.Fatalf("Not connect; %v", err)
@@ -226,8 +234,9 @@ func GroupNameChange(c *cobra.Command, args []string) {
 	client := pb.NewControllerClient(conn)
 	header := metadata.New(map[string]string{"authorization": base.Token})
 	ctx := metadata.NewOutgoingContext(context.Background(), header)
+	groupID, _ := strconv.Atoi(args[0])
 
-	r, err := client.UpdateGroup(ctx, &pb.GroupData{Id: args[0], Name: args[1]})
+	r, err := client.UpdateGroup(ctx, &pb.GroupData{Id: int64(groupID), Name: args[1]})
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
 	}
@@ -249,9 +258,10 @@ func GroupSpecChange(c *cobra.Command, args []string, spec MaxSpec) {
 	client := pb.NewControllerClient(conn)
 	header := metadata.New(map[string]string{"authorization": base.Token})
 	ctx := metadata.NewOutgoingContext(context.Background(), header)
+	groupID, _ := strconv.Atoi(args[0])
 
 	r, err := client.UpdateGroup(ctx, &pb.GroupData{
-		Id:   args[0],
+		Id:   int64(groupID),
 		Sepc: &pb.SpecData{Vm: spec.MaxVM, Cpu: spec.MaxCPU, Mem: spec.MaxMem, Storage: spec.MaxStorage},
 	})
 	if err != nil {

@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-func GenerateToken(c *cobra.Command, args []string) {
+func GenerateToken(c *cobra.Command, args []string, user, pass string) {
 	base := etc.GetData(c)
 	conn, err := grpc.Dial(base.Host, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithTimeout(time.Second))
 	if err != nil {
@@ -32,7 +32,7 @@ func GenerateToken(c *cobra.Command, args []string) {
 		log.Fatalf("Error: string to int")
 	}
 
-	r, err := client.GenerateToken(ctx, &pb.UserData{Name: base.User, Pass: base.Pass, Auth: int32(mode)})
+	r, err := client.GenerateToken(ctx, &pb.UserData{Name: user, Pass: pass, Auth: int32(mode)})
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
 	}

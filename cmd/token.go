@@ -21,7 +21,15 @@ for example:
 0:Permanent 1:24H 2:1H
 token generate　[0/1/2]`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		data.GenerateToken(cmd, args)
+		user, err := cmd.Flags().GetString("user")
+		if err != nil {
+			log.Fatalf("could not greet: %v", err)
+		}
+		pass, err := cmd.Flags().GetString("pass")
+		if err != nil {
+			log.Fatalf("could not greet: %v", err)
+		}
+		data.GenerateToken(cmd, args, user, pass)
 		return nil
 	},
 }
@@ -64,4 +72,7 @@ func init() {
 	tokenCmd.AddCommand(tokenGenerateCmd)
 	tokenCmd.AddCommand(tokenDeleteCmd)
 	tokenCmd.AddCommand(tokenGetAllCmd)
+
+	tokenCmd.PersistentFlags().StringP("user", "u", "", "username")
+	tokenCmd.PersistentFlags().StringP("pass", "p", "", "password")
 }

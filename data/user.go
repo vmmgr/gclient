@@ -55,8 +55,9 @@ func DeleteUser(c *cobra.Command, args []string) {
 	client := pb.NewControllerClient(conn)
 	header := metadata.New(map[string]string{"authorization": base.Token})
 	ctx := metadata.NewOutgoingContext(context.Background(), header)
+	userID, _ := strconv.Atoi(args[0])
 
-	r, err := client.DeleteUser(ctx, &pb.UserData{Id: args[0]})
+	r, err := client.DeleteUser(ctx, &pb.UserData{Id: int64(userID)})
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
 	}
@@ -92,7 +93,7 @@ func GetAllUser(c *cobra.Command, args []string) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		tmp := []string{d.Id, d.Name, strconv.Itoa(int(d.Auth)), d.Admingroup, d.Usergroup}
+		tmp := []string{strconv.Itoa(int(d.Id)), d.Name, strconv.Itoa(int(d.Auth)), d.Admingroup, d.Usergroup}
 		data = append(data, tmp)
 	}
 	table := tablewriter.NewWriter(os.Stdout)
@@ -115,8 +116,9 @@ func UserNameChange(c *cobra.Command, args []string) {
 	client := pb.NewControllerClient(conn)
 	header := metadata.New(map[string]string{"authorization": base.Token})
 	ctx := metadata.NewOutgoingContext(context.Background(), header)
+	userID, _ := strconv.Atoi(args[0])
 
-	r, err := client.UpdateUser(ctx, &pb.UserData{Id: args[0], Name: args[1]})
+	r, err := client.UpdateUser(ctx, &pb.UserData{Id: int64(userID), Name: args[1]})
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
 	}
@@ -138,8 +140,9 @@ func UserPassChange(c *cobra.Command, args []string) {
 	client := pb.NewControllerClient(conn)
 	header := metadata.New(map[string]string{"authorization": base.Token})
 	ctx := metadata.NewOutgoingContext(context.Background(), header)
+	userID, _ := strconv.Atoi(args[0])
 
-	r, err := client.UpdateUser(ctx, &pb.UserData{Id: args[0], Pass: args[1]})
+	r, err := client.UpdateUser(ctx, &pb.UserData{Id: int64(userID), Pass: args[1]})
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
 	}

@@ -39,8 +39,6 @@ func init() {
 	//rootCmd.Flags().Bool("toggle", false, "Help message for toggle")
 	rootCmd.PersistentFlags().StringP("host", "H", "127.0.0.1:50200", "host example: 127.0.0.1:50001")
 	rootCmd.PersistentFlags().StringP("token", "t", "", "")
-	rootCmd.PersistentFlags().StringP("authuser", "u", "", "username")
-	rootCmd.PersistentFlags().StringP("authpass", "p", "", "password")
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -69,14 +67,6 @@ func Base(cmd *cobra.Command) BaseData {
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
 	}
-	authuser, err := cmd.Flags().GetString("authuser")
-	if err != nil {
-		log.Fatalf("could not greet: %v", err)
-	}
-	authpass, err := cmd.Flags().GetString("authpass")
-	if err != nil {
-		log.Fatalf("could not greet: %v", err)
-	}
 	token, err := cmd.Flags().GetString("token")
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
@@ -84,8 +74,6 @@ func Base(cmd *cobra.Command) BaseData {
 
 	return BaseData{
 		Host:  host,
-		User:  authuser,
-		Pass:  authpass,
 		Token: token,
 	}
 }
