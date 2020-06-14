@@ -16,18 +16,47 @@ vm delete test`,
 
 var vmAddCmd = &cobra.Command{
 	Use:   "add",
-	Short: "vm add [Name] [GroupID] [Driver] [Size(MB)] [Mode] [Path] [Image]",
+	Short: "vm add -n [Name] -g [GroupID] -c [CPU] -m [Mem(MB)] -s [Storage] -N [NIC] -p [PCI]",
 	Long: `vm add tool
 for example:
 Driver| 1:virtio
 Mode  | 1~9:AutoMode 10:ManualMode
-vm add [Name] [GroupID] [Driver] [Size(MB)] [Mode] [Path] [Image]`,
+vm add -n [Name] -g [GroupID] -c [CPU] -m [Mem(MB)] -s [Storage] -N [NIC] -p [PCI]`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if len(args) < 1 {
+		if len(args) > 1 {
 			log.Fatal("Syntax error!!")
 		}
 
-		data.AddStorage(cmd, args)
+		name, err := cmd.Flags().GetString("name")
+		if err != nil {
+			log.Fatalf("could not greet: %v", err)
+		}
+		gid, err := cmd.Flags().GetInt64("gid")
+		if err != nil {
+			log.Fatalf("could not greet: %v", err)
+		}
+		cpu, err := cmd.Flags().GetInt32("cpu")
+		if err != nil {
+			log.Fatalf("could not greet: %v", err)
+		}
+		mem, err := cmd.Flags().GetInt32("mem")
+		if err != nil {
+			log.Fatalf("could not greet: %v", err)
+		}
+		storage, err := cmd.Flags().GetString("storage")
+		if err != nil {
+			log.Fatalf("could not greet: %v", err)
+		}
+		nic, err := cmd.Flags().GetString("nic")
+		if err != nil {
+			log.Fatalf("could not greet: %v", err)
+		}
+		pci, err := cmd.Flags().GetString("pci")
+		if err != nil {
+			log.Fatalf("could not greet: %v", err)
+		}
+
+		data.AddVM(cmd, data.VmData{Gid: gid, Name: name, CPU: cpu, Mem: mem, Storage: storage, NIC: nic, PCI: pci})
 		return nil
 	},
 }
@@ -152,7 +181,7 @@ var vmGetAllCmd = &cobra.Command{
 for example:
 vm get all`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		//data.GetAllStorage(cmd, args)
+		data.GetAllVM(cmd, args)
 		return nil
 	},
 }
@@ -210,4 +239,13 @@ func init() {
 	vmGetCmd.AddCommand(vmGetAllCmd)
 	vmChangeCmd.AddCommand(vmNameChangeCmd)
 	vmChangeCmd.AddCommand(vmPassChangeCmd)
+
+	vmAddCmd.PersistentFlags().Int64P("gid", "g", 0, "groupId")
+	vmAddCmd.PersistentFlags().StringP("name", "n", "", "name")
+	vmAddCmd.PersistentFlags().Int32P("cpu", "c", 1, "cpu")
+	vmAddCmd.PersistentFlags().Int32P("mem", "m", 512, "memory")
+	vmAddCmd.PersistentFlags().StringP("storage", "s", "", "storage")
+	vmAddCmd.PersistentFlags().StringP("nic", "N", "", "nic")
+	vmAddCmd.PersistentFlags().StringP("pci", "p", "", "pci")
+
 }
